@@ -1,6 +1,22 @@
 #instalando sparklyr
 library(dplyr)    # Data Refinery/wrangling
 library(ggplot2)  # Data Visualization
+library(tidyverse)
+#pacotes importantes
+#important libraries
+#install.packages("corrplot")
+library(e1071)
+library(caret)
+library(corrplot)
+#grafico de corr
+#correlation plot
+#down bellow
+
+#caso deseje ver a correlacao com a pedigree
+#In case you need to see the correlation with the pedigree function
+
+#tirando a pedigree function
+#taking out the pedigree function
 
 #install.packages("sparklyr")
 packageVersion("sparklyr")
@@ -9,24 +25,37 @@ library(sparklyr)
 spark_available_versions()
 #spark_install(version ="3.1")
 spark_installed_versions()
-
-sc <- spark_connect(master = "local", version = "3.1")
-
 #dataset do star wars
 data()
 df <- txhousing                                 
 
+sc <- spark_connect(master = "local", version = "3.1")
+
 starw <- copy_to(sc, df)
+
 
 starw
 count(starw)
 
 #####################################3
-#Alturas e Pesos
-#processamnto spark e coletando para o R
-table_av <- starw %>% group_by(species) %>%
-  summarise(count = n(), average_height = mean(height,na.rm=T),
-            average_mass = mean(mass,na.rm=T)) %>% collect()
+
+table_av1 <- starw %>% group_by(year) %>%
+  summarise(count = n(), sum_sales = sum(sales,na.rm=T)) %>% collect()
+
+table_av <- starw %>% group_by(city,year) %>%
+  summarise(count = n(), sum_sales = sum(sales,na.rm=T)) %>% collect()
+
+
+table_av2 <- starw %>% group_by(city,year) %>%
+  summarise(vol = mean(volume),list=mean(listings), sum_sales = sum(sales,na.rm=T)) %>% collect()
+
+#separating data between test and training
+#separando os dados entre treinamento e teste
+cor(table_av2$vol,table_av2$list)
+corrplot(cor(table_av2[,-1]),method="number")
+indice<-createDataPartition(starw[["sales"]],list=FALSE,p=0.70)
+treino<-diabetes[indice,]
+teste <-diabetes[-indice,]
 
 table_av$species[table_av$species!=" NA"]
 table_av <- table_av[-29,]
