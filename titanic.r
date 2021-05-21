@@ -5,9 +5,7 @@ library(tidyverse)
 #pacotes importantes
 #important libraries
 #install.packages("caret")
-library(e1071)
 library(caret)
-library(corrplot)
 #grafico de corr
 #correlation plot
 #down bellow
@@ -28,10 +26,6 @@ sc <- spark_connect(master = "local", version = "3.1")
 
 titan <- copy_to(sc, df)
 
-titan <- titan %>% 
-  mutate(Survivor = ifelse(Survived=="No",0,1))
-
-
 titan
 count(titan)
 #####################################3
@@ -46,10 +40,7 @@ table_av <- titan %>% group_by(Class,Sex) %>%
 table_av2 <- titan %>% group_by(Class,Survived) %>%
   summarise(sum_freq = sum(Freq,na.rm=T)) %>% collect()
 
-View(table_av)
-
 ##################################################################
-
 
 partition <- titan %>% 
   mutate(Survivor = ifelse(Survived=="No",0,1)) %>%
@@ -66,7 +57,7 @@ ml_formula <- formula(Survivor ~ Sex + Age)
 (ml_log <- ml_logistic_regression(train_tbl, ml_formula))
 
 test <- test_tbl %>% collect()
-# Create a function for scoring
+# Creat
 pred <- ml_predict(ml_log, test_tbl) %>% collect()
 
 library(caret)
