@@ -21,39 +21,57 @@ spark_available_versions()
 spark_installed_versions()
 #dataset do star wars
 data()
+
 df <- as.data.frame(Titanic)                                 
 
 sc <- spark_connect(master = "local", version = "3.1")
 
-starw <- copy_to(sc, df)
+titan <- copy_to(sc, df)
 
-spark_disconnect(sc)
+titan <- titan %>% 
+  mutate(Survivor = ifelse(Survived=="No",0,1))
 
-starw
-count(starw)
+
+titan
+count(titan)
 #####################################3
 
-table_av1 <- starw %>% group_by(Age,Survived) %>%
+table_av1 <- titan %>% group_by(Age,Survived) %>%
   summarise(sum_freq = sum(Freq,na.rm=T)) %>% collect()
 
-table_av <- starw %>% group_by(Class,Sex) %>%
+table_av <- titan %>% group_by(Class,Sex) %>%
   summarise( sum_freq = sum(Freq,na.rm=T)) %>% collect()
 
 
-table_av2 <- starw %>% group_by(Class,Survived) %>%
+table_av2 <- titan %>% group_by(Class,Survived) %>%
   summarise(sum_freq = sum(Freq,na.rm=T)) %>% collect()
 
 View(table_av)
 
-#altura media
-ggplot(table_av, aes(table_av$city, table_av$sum_sales)) +
-  geom_col(aes(fill=city))+coord_flip()+theme_minimal()+theme(legend.position = "none")
-
-#massa media
-ggplot(na.omit(table_av), aes(species, average_mass)) +
-  geom_col(aes(fill=species))+coord_flip()+theme_minimal()+theme(legend.position = "none")
-
-View(table_av[,-2])
 ##################################################################
 
 
+partition <- titan %>% 
+  mutate(Survivor = ifelse(Survived=="No",0,1)) %>%
+  select(Survivor, Class, Sex, Age, Freq) %>%
+  sdf_partition(train = 0.70, test = 0.3, seed = 8585)
+
+# Create table references
+train_tbl <- partition$train
+test_tbl <- partition$test
+
+# Model survival as a function of several predictors
+ml_formula <- formula(Survivor ~ Sex + Age)
+# Train a logistic regression model
+(ml_log <- ml_logistic_regression(train_tbl, ml_formula))
+
+test <- test_tbl %>% collect()
+# Create a function for scoring
+pred <- ml_predict(ml_log, test_tbl) %>% collect()
+
+library(caret)
+confusionMatrix(factor(pred$prediction),factor(test[["Survivor"]]))
+
+spark_disconnect(sc)
+
+# https://github.com/rstudio/sparkDemos/blob/master/dev/cloudera/spark_ml_classification_titanic.Rmd
