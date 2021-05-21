@@ -30,18 +30,32 @@ titan
 count(titan)
 #####################################3
 
+##########################################################################
 table_av1 <- titan %>% group_by(Age,Survived) %>%
   summarise(sum_freq = sum(Freq,na.rm=T)) %>% collect()
 
+#Faixa
+ggplot(table_av1, aes(table_av1$Age, table_av1$sum_freq)) +
+  geom_col(aes(fill=table_av1$Survived),position = "dodge")+theme_minimal()+theme(legend.position = "right")+labs(x="Faixa-etária",y="Quantidade")
+
+####################################################3
 table_av <- titan %>% group_by(Class,Sex) %>%
   summarise( sum_freq = sum(Freq,na.rm=T)) %>% collect()
 
+#classe
+ggplot(table_av, aes(table_av$Sex, table_av$sum_freq)) +
+  geom_col(aes(fill=table_av$Class),position = "dodge")+theme_minimal()+theme(legend.position = "right")+labs(x="Sexo",y="Quantidade",fill="Classe")
 
 table_av2 <- titan %>% group_by(Class,Survived) %>%
   summarise(sum_freq = sum(Freq,na.rm=T)) %>% collect()
 
-##################################################################
+#classe
+ggplot(table_av2, aes(table_av2$Class, table_av$sum_freq)) +
+  geom_col(aes(fill=table_av2$Survived),position = "dodge")+theme_minimal()+theme(legend.position = "right")+labs(x="Sexo",y="Quantidade",fill="Sobreviveu?")
 
+
+##################################################################
+#bonus
 partition <- titan %>% 
   mutate(Survivor = ifelse(Survived=="No",0,1)) %>%
   select(Survivor, Class, Sex, Age, Freq) %>%
